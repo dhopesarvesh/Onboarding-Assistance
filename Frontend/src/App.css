@@ -1,0 +1,11 @@
+/* App.css */
+.app-layout {
+  display: flex;
+  height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px;
+  background: #f7f8fa;
+}
