@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import DocumentContent from "./DocumentContext";
+import DocumentContent from "./DocumentContent";
 import DocumentHeader from "./DocumentHeader";
 import "./DocumentViewer.css";
 
