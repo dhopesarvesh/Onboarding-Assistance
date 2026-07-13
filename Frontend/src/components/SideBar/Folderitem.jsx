@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function FolderItem({ folder }) {
+function FolderItem({ folder, selectedDocId, onSelectDocument }) {
   const [isOpen, setIsOpen] = useState(folder.isOpen);
 
   return (
@@ -16,10 +16,14 @@ function FolderItem({ folder }) {
 
       {isOpen && (
         <div className="folder-documents">
-          {folder.documents.map((doc) => (
-            <button key={doc} className="document-item">
+          {(folder.documents || []).map((doc) => (
+            <button
+              key={doc.id}
+              className={`document-item ${doc.id === selectedDocId ? "active" : ""}`}
+              onClick={() => onSelectDocument(doc)}
+            >
               <span className="doc-icon">📄</span>
-              <span>{doc}</span>
+              <span>{doc.title}</span>
             </button>
           ))}
         </div>
