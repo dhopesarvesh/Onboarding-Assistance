@@ -89,6 +89,91 @@
 .folder-header:hover {
   background: rgba(255, 255, 255, 0.06);
 }
+.folder-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.folder-header-row .folder-header {
+  flex: 1;
+}
+
+.folder-add-btn {
+  background: none;
+  border: none;
+  color: #8b95a7;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.folder-header-row:hover .folder-add-btn {
+  opacity: 1;
+}
+
+.folder-add-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.inline-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #e5e9f0;
+  font-size: 13.5px;
+  padding: 7px 10px;
+  outline: none;
+}
+
+.inline-input::placeholder {
+  color: #8b95a7;
+}
+
+.inline-input-doc {
+  margin-left: 4px;
+  width: calc(100% - 4px);
+}
+.inline-doc-creator {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inline-select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #e5e9f0;
+  font-size: 13px;
+  padding: 6px 8px;
+  outline: none;
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-btn:disabled:hover {
+  background: none;
+}
+.upload-doc-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.upload-label {
+  font-size: 11px;
+  color: #8b95a7;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0 2px;
+}
 
 .folder-arrow {
   font-size: 10px;

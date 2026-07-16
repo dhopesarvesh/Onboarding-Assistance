@@ -14,6 +14,8 @@ public class Document {
 
     private String title;
 
+    private String slug;
+
     @Column(columnDefinition = "TEXT")
     private String content;
 
