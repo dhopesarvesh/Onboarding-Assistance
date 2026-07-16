@@ -15,6 +15,9 @@ public class Folder {
 
     private String name;
 
+    @Column(unique = true)
+    private String slug;
+
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Document> documents;
 }
