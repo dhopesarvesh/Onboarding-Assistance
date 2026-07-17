@@ -1,6 +1,18 @@
-function DocumentHeader({ title, searchTerm, onSearchChange, matchCount }) {
+function DocumentHeader({ title, folderName, searchTerm, onSearchChange, matchCount }) {
   return (
     <div className="doc-header">
+      <div className="doc-breadcrumb">
+        <span>Home</span>
+        {folderName && (
+          <>
+            <span className="crumb-sep">›</span>
+            <span>{folderName}</span>
+          </>
+        )}
+        <span className="crumb-sep">›</span>
+        <span className="crumb-current">{title}</span>
+      </div>
+
       <h1 className="doc-title">{title}</h1>
 
       <div className="doc-search">
@@ -18,8 +30,6 @@ function DocumentHeader({ title, searchTerm, onSearchChange, matchCount }) {
           </span>
         )}
       </div>
-
-      <div className="doc-divider" />
     </div>
   );
 }
