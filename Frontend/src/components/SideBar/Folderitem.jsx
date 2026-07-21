@@ -6,7 +6,7 @@ function FolderItem({ folder, onRefresh }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-  const { folderSlug, docSlug } = useParams();
+  const { projectSlug,folderSlug, docSlug } = useParams();
 
   const handleFileSelected = async (e) => {
     const file = e.target.files[0];
@@ -48,24 +48,6 @@ function FolderItem({ folder, onRefresh }) {
           <span className="folder-arrow">{isOpen ? "▼" : "▶"}</span>
           <span className="folder-name">{folder.name}</span>
         </button>
-        <button
-          className="folder-add-btn"
-          title="Upload document"
-          disabled={uploading}
-          onClick={(e) => {
-            e.stopPropagation();
-            fileInputRef.current?.click();
-          }}
-        >
-          {uploading ? "⏳" : "📤"}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".txt,.md,.json,.js,.jsx,.ts,.tsx,.java,.py,.css,.html,.yml,.yaml,.xml,.csv"
-          style={{ display: "none" }}
-          onChange={handleFileSelected}
-        />
       </div>
 
       {isOpen && (
@@ -76,7 +58,7 @@ function FolderItem({ folder, onRefresh }) {
               className={`document-item ${
                 folderSlug === folder.slug && docSlug === doc.slug ? "active" : ""
               }`}
-              onClick={() => navigate(`/${folder.slug}/${doc.slug}`)}
+              onClick={() => navigate(`/${projectSlug}/${folder.slug}/${doc.slug}`)}
             >
               <span className="doc-icon">📄</span>
               <span>{doc.title}</span>
