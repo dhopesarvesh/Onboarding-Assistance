@@ -55,7 +55,7 @@ function DocumentRoute({ folders }) {
   const { folderSlug, docSlug } = useParams();
   const folder = folders.find((f) => f.slug === folderSlug);
   const document = folder?.documents.find((d) => d.slug === docSlug) || null;
-  return <DocumentViewer document={document} />;
+  return <DocumentViewer document={document} folderName={folder?.name} />;
 }
 
 export default App;

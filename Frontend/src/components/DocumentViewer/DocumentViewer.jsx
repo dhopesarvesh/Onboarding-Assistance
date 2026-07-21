@@ -1,12 +1,11 @@
 import { useState, useMemo } from "react";
-import DocumentContent from "./DocumentContent";
 import DocumentHeader from "./DocumentHeader";
+import DocumentContent from "./DocumentContent";
 import "./DocumentViewer.css";
 
-function DocumentViewer({ document }) {
+function DocumentViewer({ document, folderName }) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Reset search whenever the user switches documents
   const matchCount = useMemo(() => {
     if (!searchTerm || !document) return 0;
     const regex = new RegExp(escapeRegExp(searchTerm), "gi");
@@ -15,10 +14,12 @@ function DocumentViewer({ document }) {
 
   if (!document) {
     return (
-      <div className="doc-viewer empty-state">
-        <span className="empty-icon">📄</span>
-        <h2>No document selected</h2>
-        <p>Pick a document from the sidebar to view it here.</p>
+      <div className="doc-viewer">
+        <div className="empty-state">
+          <span className="empty-icon">📄</span>
+          <h2>No document selected</h2>
+          <p>Pick a document from the sidebar to view it here.</p>
+        </div>
       </div>
     );
   }
@@ -27,11 +28,14 @@ function DocumentViewer({ document }) {
     <div className="doc-viewer">
       <DocumentHeader
         title={document.title}
+        folderName={folderName}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         matchCount={matchCount}
       />
-      <DocumentContent content={document.content} searchTerm={searchTerm} />
+      <div className="doc-body">
+        <DocumentContent content={document.content} searchTerm={searchTerm} />
+      </div>
     </div>
   );
 }
