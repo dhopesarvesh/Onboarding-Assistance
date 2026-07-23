@@ -4,6 +4,7 @@ import ProjectPicker from "./components/ProjectPicker/ProjectPicker";
 import Sidebar from "./components/Sidebar/Sidebar";
 import DocumentViewer from "./components/DocumentViewer/DocumentViewer";
 import "./App.css";
+import ChatBot from "./components/ChatBot/ChatBot";
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function ProjectWorkspace() {
           <Route path="/" element={<DocumentViewer document={null} />} />
           <Route path=":folderSlug/:docSlug" element={<DocumentRoute project={project} />} />
         </Routes>
+        <ChatBot/>
       </main>
     </div>
   );
