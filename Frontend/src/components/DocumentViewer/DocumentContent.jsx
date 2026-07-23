@@ -1,7 +1,11 @@
+import { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { createHeadingIdGenerator, flattenText } from "../../util/headingUtil";
 
 function DocumentContent({ content, searchTerm }) {
+  const headingIdGen = useMemo(() => createHeadingIdGenerator(), [content]);
+
   if (searchTerm) {
     return (
       <div className="doc-content doc-content-plain">
@@ -18,9 +22,21 @@ function DocumentContent({ content, searchTerm }) {
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
-            h1: (props) => <h1 className="md-h1" {...props} />,
-            h2: (props) => <h2 className="md-h2" {...props} />,
-            h3: (props) => <h3 className="md-h3" {...props} />,
+            h1: ({ children, ...props }) => (
+              <h1 className="md-h1" id={headingIdGen(flattenText(children))} {...props}>
+                {children}
+              </h1>
+            ),
+            h2: ({ children, ...props }) => (
+              <h2 className="md-h2" id={headingIdGen(flattenText(children))} {...props}>
+                {children}
+              </h2>
+            ),
+            h3: ({ children, ...props }) => (
+              <h3 className="md-h3" id={headingIdGen(flattenText(children))} {...props}>
+                {children}
+              </h3>
+            ),
             p: (props) => <p className="md-p" {...props} />,
             ul: (props) => <ul className="md-ul" {...props} />,
             ol: (props) => <ol className="md-ol" {...props} />,
@@ -46,8 +62,6 @@ function DocumentContent({ content, searchTerm }) {
     );
   }
 
-  // Fallback: plain text (PDFs, .txt uploads) with no markdown syntax.
-  // Auto-detect bullet-like lines so they still render as a real list.
   return <div className="doc-content markdown-body">{renderPlainStructured(content)}</div>;
 }
 
@@ -74,21 +88,13 @@ function renderPlainStructured(content) {
 
     if (bulletChar.test(line)) {
       flushPara();
-
-      // Split the line into: intro text (before first bullet) + bullet items
       const segments = line.split(bulletChar).map((s) => s.trim()).filter(Boolean);
-
-      // If the line has meaningful text before the first bullet, keep it as a paragraph
       const firstBulletIndex = line.search(bulletChar);
       const intro = line.slice(0, firstBulletIndex).trim();
       const items = segments.slice(intro ? 1 : 0);
 
-      if (intro) {
-        blocks.push({ type: "p", text: intro });
-      }
-      if (items.length > 0) {
-        blocks.push({ type: "list", ordered: false, items });
-      }
+      if (intro) blocks.push({ type: "p", text: intro });
+      if (items.length > 0) blocks.push({ type: "list", ordered: false, items });
       continue;
     }
 
@@ -103,7 +109,6 @@ function renderPlainStructured(content) {
   }
   flushPara();
 
-  // Merge adjacent unordered-list blocks into one list
   const merged = [];
   for (const block of blocks) {
     const last = merged[merged.length - 1];
