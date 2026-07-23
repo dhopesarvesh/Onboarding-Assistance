@@ -14,9 +14,11 @@ public class Folder {
     private Long id;
 
     private String name;
-
-    @Column(unique = true)
     private String slug;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
 
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Document> documents;

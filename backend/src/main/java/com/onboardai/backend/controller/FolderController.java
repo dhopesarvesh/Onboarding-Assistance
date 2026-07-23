@@ -3,7 +3,9 @@ package com.onboardai.backend.controller;
 import com.onboardai.backend.dto.*;
 import com.onboardai.backend.model.Document;
 import com.onboardai.backend.model.Folder;
+import com.onboardai.backend.model.Project;
 import com.onboardai.backend.repository.FolderRepository;
+import com.onboardai.backend.repository.ProjectRepository;
 import com.onboardai.backend.util.FileTextExtractor;
 import com.onboardai.backend.util.SlugUtil;
 import org.springframework.http.ResponseEntity;
@@ -14,38 +16,54 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.onboardai.backend.controller.ProjectController.getFolderDto;
+
 @RestController
-@RequestMapping("/api/folders")
+@RequestMapping("/api")
 @CrossOrigin(origins = "http://localhost:5173")
 public class FolderController {
 
     private final FolderRepository folderRepository;
+    private final ProjectRepository projectRepository;
     private final FileTextExtractor fileTextExtractor;
 
-    public FolderController(FolderRepository folderRepository, FileTextExtractor fileTextExtractor) {
+    public FolderController(
+            FolderRepository folderRepository,
+            ProjectRepository projectRepository,
+            FileTextExtractor fileTextExtractor
+    ) {
         this.folderRepository = folderRepository;
+        this.projectRepository = projectRepository;
         this.fileTextExtractor = fileTextExtractor;
     }
 
-    @GetMapping
-    public List<FolderDto> getAllFolders() {
+    @GetMapping("/projects/{projectId}/folders")
+    public List<FolderDto> getFoldersForProject(@PathVariable Long projectId) {
         return folderRepository.findAll().stream()
+                .filter(f -> f.getProject() != null && f.getProject().getId().equals(projectId))
                 .map(this::toDto)
                 .toList();
     }
 
-    @PostMapping
-    public ResponseEntity<FolderDto> createFolder(@RequestBody CreateFolderRequest request) {
+    @PostMapping("/projects/{projectId}/folders")
+    public ResponseEntity<FolderDto> createFolder(
+            @PathVariable Long projectId,
+            @RequestBody CreateFolderRequest request
+    ) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
         Folder folder = new Folder();
         folder.setName(request.name());
         folder.setSlug(uniqueFolderSlug(SlugUtil.toSlug(request.name())));
+        folder.setProject(project);
         folder.setDocuments(new ArrayList<>());
 
         Folder saved = folderRepository.save(folder);
         return ResponseEntity.ok(toDto(saved));
     }
 
-    @PostMapping("/{folderId}/documents")
+    @PostMapping("/folders/{folderId}/documents")
     public ResponseEntity<DocumentDto> createDocument(
             @PathVariable Long folderId,
             @RequestBody CreateDocumentRequest request
@@ -57,6 +75,38 @@ public class FolderController {
         doc.setTitle(request.title());
         doc.setContent(request.content());
         doc.setSlug(uniqueDocSlug(folder, SlugUtil.toSlug(request.title())));
+        doc.setFolder(folder);
+
+        folder.getDocuments().add(doc);
+        folderRepository.save(folder);
+
+        return ResponseEntity.ok(new DocumentDto(doc.getId(), doc.getTitle(), doc.getSlug(), doc.getContent()));
+    }
+
+    @PostMapping(value = "/folders/{folderId}/documents/upload", consumes = "multipart/form-data")
+    public ResponseEntity<DocumentDto> uploadDocument(
+            @PathVariable Long folderId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new RuntimeException("Folder not found"));
+
+        String content;
+        try {
+            content = fileTextExtractor.extract(file);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String filename = file.getOriginalFilename();
+        String title = filename != null
+                ? filename.replaceAll("\\.[^.]+$", "")
+                : "Untitled";
+
+        Document doc = new Document();
+        doc.setTitle(title);
+        doc.setContent(content);
+        doc.setSlug(uniqueDocSlug(folder, SlugUtil.toSlug(title)));
         doc.setFolder(folder);
 
         folder.getDocuments().add(doc);
@@ -87,42 +137,6 @@ public class FolderController {
     }
 
     private FolderDto toDto(Folder folder) {
-        List<DocumentDto> docs = folder.getDocuments() == null
-                ? List.of()
-                : folder.getDocuments().stream()
-                .map(d -> new DocumentDto(d.getId(), d.getTitle(), d.getSlug(), d.getContent()))
-                .toList();
-        return new FolderDto(folder.getId(), folder.getName(), folder.getSlug(), docs);
-    }
-    @PostMapping(value = "/{folderId}/documents/upload", consumes = "multipart/form-data")
-    public ResponseEntity<DocumentDto> uploadDocument(
-            @PathVariable Long folderId,
-            @RequestParam("file") MultipartFile file
-    ) {
-        Folder folder = folderRepository.findById(folderId)
-                .orElseThrow(() -> new RuntimeException("Folder not found"));
-
-        String content;
-        try {
-            content = fileTextExtractor.extract(file);
-        } catch (IOException e) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        String filename = file.getOriginalFilename();
-        String title = filename != null
-                ? filename.replaceAll("\\.[^.]+$", "")
-                : "Untitled";
-
-        Document doc = new Document();
-        doc.setTitle(title);
-        doc.setContent(content);
-        doc.setSlug(uniqueDocSlug(folder, SlugUtil.toSlug(title)));
-        doc.setFolder(folder);
-
-        folder.getDocuments().add(doc);
-        folderRepository.save(folder);
-
-        return ResponseEntity.ok(new DocumentDto(doc.getId(), doc.getTitle(), doc.getSlug(), doc.getContent()));
+        return getFolderDto(folder);
     }
 }

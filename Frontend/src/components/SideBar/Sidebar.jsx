@@ -1,24 +1,27 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import FolderItem from "./FolderItem";
 import "./Sidebar.css";
 
-function Sidebar({ folders, loading, error, onRefresh }) {
+function Sidebar({ project, loading, error, onRefresh }) {
+  const navigate = useNavigate();
+  const folders = project?.folders || [];
+
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [folderError, setFolderError] = useState(null);
+
   const [targetFolderId, setTargetFolderId] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Keep the selected target folder valid as folders load/change
   useEffect(() => {
     if (folders.length === 0) {
       setTargetFolderId("");
       return;
     }
     const stillExists = folders.some((f) => String(f.id) === String(targetFolderId));
-    if (!stillExists) {
-      setTargetFolderId(folders[0].id);
-    }
+    if (!stillExists) setTargetFolderId(folders[0].id);
   }, [folders]);
 
   const submitNewFolder = async () => {
@@ -27,14 +30,24 @@ function Sidebar({ folders, loading, error, onRefresh }) {
       setCreatingFolder(false);
       return;
     }
-    await fetch("http://localhost:8080/api/folders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    setNewFolderName("");
-    setCreatingFolder(false);
-    onRefresh();
+    setFolderError(null);
+    try {
+      const res = await fetch(`http://localhost:8080/api/projects/${project.id}/folders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Server error (${res.status}): ${text || "no details"}`);
+      }
+      setNewFolderName("");
+      setCreatingFolder(false);
+      onRefresh();
+    } catch (err) {
+      console.error("Failed to create folder:", err);
+      setFolderError(err.message);
+    }
   };
 
   const triggerFilePicker = () => {
@@ -47,47 +60,66 @@ function Sidebar({ folders, loading, error, onRefresh }) {
     if (!file || !targetFolderId) return;
 
     setUploading(true);
-
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(
-      `http://localhost:8080/api/folders/${targetFolderId}/documents/upload`,
-      {
-        method: "POST",
-        body: formData,
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/folders/${targetFolderId}/documents/upload`,
+        { method: "POST", body: formData }
+      );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Upload failed (${res.status}): ${text || "no details"}`);
       }
-    );
-
-    setUploading(false);
-    e.target.value = "";
-
-    if (!res.ok) {
-      alert("Upload failed — unsupported file type or extraction error.");
-      return;
+      onRefresh();
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert(err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
     }
-
-    onRefresh();
   };
 
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
+        <button className="back-to-projects" onClick={() => navigate("/")} title="All projects">
+          ←
+        </button>
         <span className="sidebar-logo">📘</span>
-        <span className="sidebar-title">OnboardAI</span>
+        <span className="sidebar-title">{project?.name || "OnboardAI"}</span>
       </div>
 
       <div className="sidebar-actions">
         {creatingFolder ? (
-          <input
-            autoFocus
-            className="inline-input"
-            placeholder="Folder name..."
-            value={newFolderName}
-            onChange={(e) => setNewFolderName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submitNewFolder()}
-            onBlur={submitNewFolder}
-          />
+          <div className="inline-folder-creator">
+            <input
+              autoFocus
+              className="inline-input"
+              placeholder="Folder name..."
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submitNewFolder()}
+            />
+            <div className="inline-btn-row">
+              <button className="inline-confirm-btn" onClick={submitNewFolder}>
+                Add
+              </button>
+              <button
+                className="inline-cancel-btn"
+                onClick={() => {
+                  setCreatingFolder(false);
+                  setNewFolderName("");
+                  setFolderError(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+            {folderError && <p className="inline-error">{folderError}</p>}
+          </div>
         ) : (
           <button className="action-btn" onClick={() => setCreatingFolder(true)}>
             <span>➕</span> New Folder
@@ -109,24 +141,22 @@ function Sidebar({ folders, loading, error, onRefresh }) {
               </option>
             ))}
           </select>
-
           <button
             className="action-btn"
             onClick={triggerFilePicker}
             disabled={folders.length === 0 || uploading}
-            title={folders.length === 0 ? "Create a folder first" : ""}
           >
             <span>📤</span> {uploading ? "Uploading..." : "Upload Document"}
           </button>
         </div>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".txt,.md,.json,.js,.jsx,.ts,.tsx,.java,.py,.css,.html,.yml,.yaml,.xml,.csv,.pdf,.docx"
-            style={{ display: "none" }}
-            onChange={handleFileSelected}
-          />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.md,.json,.js,.jsx,.ts,.tsx,.java,.py,.css,.html,.yml,.yaml,.xml,.csv,.pdf,.docx"
+          style={{ display: "none" }}
+          onChange={handleFileSelected}
+        />
       </div>
 
       <div className="sidebar-divider" />
