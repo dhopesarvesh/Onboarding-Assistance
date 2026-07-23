@@ -33,8 +33,9 @@ public class FileTextExtractor {
     private String extractPdf(MultipartFile file) throws IOException {
         try (InputStream is = file.getInputStream();
              PDDocument document = Loader.loadPDF(is.readAllBytes())) {
-            PDFTextStripper stripper = new PDFTextStripper();
-            return stripper.getText(document);
+            HeadingAwarePdfTextStripper stripper = new HeadingAwarePdfTextStripper();
+            stripper.getText(document); // triggers writeString callbacks, populating heading data
+            return stripper.extractWithHeadings();
         }
     }
 

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import DocumentHeader from "./DocumentHeader";
 import DocumentContent from "./DocumentContent";
+import TableOfContents from "./TableOfContents";
 import "./DocumentViewer.css";
 
 function DocumentViewer({ document, folderName }) {
@@ -33,8 +34,11 @@ function DocumentViewer({ document, folderName }) {
         onSearchChange={setSearchTerm}
         matchCount={matchCount}
       />
-      <div className="doc-body">
-        <DocumentContent content={document.content} searchTerm={searchTerm} />
+      <div className="doc-body-row">
+        <div className="doc-body">
+          <DocumentContent content={document.content} searchTerm={searchTerm} />
+        </div>
+        {!searchTerm && <TableOfContents content={document.content} />}
       </div>
     </div>
   );
